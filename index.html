@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Viewer with Header</title>
+    <title>Zero - Menu</title>
     <style>
         html, body {
             margin: 0;
             padding: 0;
             height: 100%;
-            overflow: hidden;
         }
         /* Header style */
         header {
@@ -19,26 +18,21 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 10;
+            padding: 10px;
             /* Drop shadow below */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
         /* Image style inside the header */
         header img {
-            max-height: 70%;
+            height: 90%;
             max-width: 100%;
             object-fit: contain;
         }
         /* PDF container */
         #pdf-container {
-            position: absolute;
-            top: 10%;
             width: 100%;
-            height: 90%;
             overflow: auto;
+            padding: 20px; /* Add some padding for better layout */
         }
         #pdf-viewer {
             width: 100%;
@@ -51,7 +45,7 @@
 </head>
 <body>
     <header>
-        <img src="zero.jpg" alt="Header Image">
+        <img src="zero.jpg" alt="Zero">
     </header>
     <div id="pdf-container">
         <div id="pdf-viewer"></div>
