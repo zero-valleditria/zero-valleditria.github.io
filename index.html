@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF Viewer with Header</title>
     <style>
         html, body {
@@ -11,7 +11,7 @@
             height: 100%;
             overflow: hidden;
         }
-        /* Fixed header */
+        /* Header style */
         header {
             height: 10%;
             width: 100%;
@@ -23,34 +23,25 @@
             top: 0;
             left: 0;
             z-index: 10;
+            /* Drop shadow below */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
+        /* Image style inside the header */
         header img {
             max-height: 70%;
             max-width: 100%;
             object-fit: contain;
         }
-        /* PDF container with scroll and zoom capabilities */
+        /* PDF container */
         #pdf-container {
             position: absolute;
             top: 10%;
-            bottom: 0;
-            left: 0;
-            right: 0;
             width: 100%;
             height: 90%;
             overflow: auto;
-            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-            touch-action: none; /* Prevent default pinch-to-zoom behavior */
         }
         #pdf-viewer {
-            transform-origin: 0 0;
-        }
-        /* Mobile pinch-to-zoom styles */
-        @media (max-width: 768px) {
-            #pdf-container {
-                touch-action: pinch-zoom; /* Enable pinch-zoom for the PDF container */
-            }
+            width: 100%;
         }
         canvas {
             display: block;
@@ -82,7 +73,7 @@
             const pdf = await pdfjsLib.getDocument(url).promise;
             const pdfViewer = document.getElementById('pdf-viewer');
 
-            // Get container width for scaling
+            // Get the container width to fit the PDF to the full width of the screen
             const containerWidth = document.getElementById('pdf-container').offsetWidth;
 
             // Get device pixel ratio for sharper rendering on high-res displays
@@ -92,88 +83,49 @@
             for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                 const page = await pdf.getPage(pageNum);
 
-                // Get original viewport
+                // Get the original page viewport (size)
                 const originalViewport = page.getViewport({ scale: 1 });
 
-                // Scale to fit container width
+                // Calculate the scale dynamically based on the container's width
                 const scale = containerWidth / originalViewport.width;
+
+                // Apply the dynamic scale to get a new viewport that fits the full width
                 const viewport = page.getViewport({ scale: scale });
 
-                // Create a canvas for each page
+                // Create a canvas element for each page
                 const canvas = document.createElement('canvas');
                 const context = canvas.getContext('2d');
 
-                // Adjust canvas size for sharp rendering
+                // Adjust canvas size to account for device pixel ratio and scaled width/height
                 canvas.width = viewport.width * devicePixelRatio;
                 canvas.height = viewport.height * devicePixelRatio;
 
-                // Set canvas CSS size
+                // Set CSS width/height to match the scaled viewport
                 canvas.style.width = `${viewport.width}px`;
                 canvas.style.height = `${viewport.height}px`;
 
-                // Scale context for sharp rendering
+                // Adjust the scale of the rendering context for high-resolution rendering
                 context.scale(devicePixelRatio, devicePixelRatio);
 
-                // Append canvas to viewer
+                // Append the canvas to the viewer div
                 pdfViewer.appendChild(canvas);
 
-                // Render the page
+                // Render the page into the canvas context
                 const renderContext = {
                     canvasContext: context,
                     viewport: viewport
                 };
-                await page.render(renderContext).promise();
+                await page.render(renderContext).promise;
             }
         }
 
-        // Load the PDF
+        // Call the loadPDF function
         loadPDF();
 
-        // Add zoom functionality for mobile pinch-to-zoom
-        let scale = 1;
-        const pdfViewer = document.getElementById('pdf-viewer');
-        const pdfContainer = document.getElementById('pdf-container');
-
-        pdfContainer.addEventListener('wheel', function (e) {
-            if (e.ctrlKey) {
-                e.preventDefault();
-                scale += e.deltaY * -0.01;
-                scale = Math.min(Math.max(0.5, scale), 3); // Limit the zoom scale between 0.5 and 3
-                pdfViewer.style.transform = `scale(${scale})`;
-            }
-        });
-
-        // Handle pinch-to-zoom on mobile devices
-        let initialDistance = null;
-
-        pdfContainer.addEventListener('touchmove', function (e) {
-            if (e.touches.length === 2) {
-                e.preventDefault();
-
-                const touch1 = e.touches[0];
-                const touch2 = e.touches[1];
-
-                const currentDistance = Math.hypot(
-                    touch1.pageX - touch2.pageX,
-                    touch1.pageY - touch2.pageY
-                );
-
-                if (initialDistance === null) {
-                    initialDistance = currentDistance;
-                } else {
-                    const zoomChange = currentDistance / initialDistance;
-                    scale *= zoomChange;
-                    scale = Math.min(Math.max(0.5, scale), 3); // Limit the zoom scale
-                    pdfViewer.style.transform = `scale(${scale})`;
-                    initialDistance = currentDistance;
-                }
-            }
-        });
-
-        pdfContainer.addEventListener('touchend', function (e) {
-            if (e.touches.length < 2) {
-                initialDistance = null; // Reset zoom tracking when touch ends
-            }
+        // Reload the PDF when the window is resized to ensure it fits the new width
+        window.addEventListener('resize', () => {
+            document.getElementById('pdf-viewer').innerHTML = ''; // Clear the current PDF
+            loadPDF(); // Reload the PDF with the updated width
         });
     </script>
 </body>
