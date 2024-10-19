@@ -57,6 +57,14 @@
 
     <script>
         const url = 'menu-food-inverno-2024.pdf'; // Path to your PDF file
+        let pdfLoaded = false; // Flag to track if PDF has already been rendered
+        let resizeTimeout; // Timeout ID for debounce
+
+        // Debounce function to limit resize handling frequency
+        function debounce(func, delay) {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(func, delay);
+        }
 
         // Asynchronous function to load PDF
         async function loadPDF() {
@@ -66,6 +74,9 @@
             // Load the PDF document
             const pdf = await pdfjsLib.getDocument(url).promise;
             const pdfViewer = document.getElementById('pdf-viewer');
+
+            // Clear previous canvases (if any) before rendering new ones
+            pdfViewer.innerHTML = '';
 
             // Get the container width to fit the PDF to the full width of the screen
             const containerWidth = document.getElementById('pdf-container').offsetWidth;
@@ -101,25 +112,30 @@
                 // Adjust the scale of the rendering context for high-resolution rendering
                 context.scale(devicePixelRatio, devicePixelRatio);
 
-                // Append the canvas to the viewer div
-                pdfViewer.appendChild(canvas);
-
                 // Render the page into the canvas context
                 const renderContext = {
                     canvasContext: context,
                     viewport: viewport
                 };
                 await page.render(renderContext).promise;
+
+                // Append the canvas to the viewer div
+                pdfViewer.appendChild(canvas);
             }
+
+            pdfLoaded = true; // Mark PDF as loaded after rendering
         }
 
-        // Call the loadPDF function
+        // Call the loadPDF function initially only if it's not already loaded
         loadPDF();
 
-        // Reload the PDF when the window is resized to ensure it fits the new width
+        // Reload the PDF only when the window is resized and debounce the re-rendering
         window.addEventListener('resize', () => {
-            document.getElementById('pdf-viewer').innerHTML = ''; // Clear the current PDF
-            loadPDF(); // Reload the PDF with the updated width
+            if (pdfLoaded) {
+                debounce(() => {
+                    loadPDF(); // Reload the PDF with the updated width
+                }, 300); // Delay to prevent excessive re-rendering
+            }
         });
     </script>
 </body>
